@@ -15,7 +15,6 @@ def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
     text = re.sub(r'\d+', '', text)
     return text.strip()
-    return len(text.split())
 
 # ---------------- LOAD MODEL ----------------
 @st.cache_resource
@@ -70,48 +69,33 @@ try:
     # ---------------- PREDICTION ----------------
     if st.button("🔍 Predict Disease", use_container_width=True):
         if user_input.strip():
-         cleaned = clean_text(user_input)
-         symptom_count = count_symptoms(cleaned)
-
-        # 🚨 Too few symptoms
-        if symptom_count < 3:
-            st.warning(
-                "⚠️ Please enter at least **3 symptoms** for a reliable prediction.\n\n"
-                "Example: fever headache nausea"
-            )
-        else:
+            cleaned = clean_text(user_input)
             vectorized = vectorizer.transform([cleaned])
+
             prediction = model.predict(vectorized)[0]
             confidence = model.predict_proba(vectorized).max() * 100
 
             st.divider()
             st.markdown("## 🧾 Diagnosis Report")
 
-            # 🔻 Low confidence safeguard
-            if confidence < 40:
-                st.warning(
-                    f"🤔 **Low Confidence Prediction ({confidence:.2f}%)**\n\n"
-                    "The symptoms provided are not sufficient for a reliable result.\n"
-                    "Please add more symptoms or consult a doctor."
+            st.success(f"**Predicted Condition:** {prediction}")
+            st.write(f"**Confidence:** {confidence:.2f}%")
+
+            if any(word in prediction.lower() for word in [
+                "heart", "stroke", "attack", "pneumonia"
+            ]):
+                st.error(
+                    "🚨 **High Risk Detected**\n\n"
+                    "Please seek immediate medical attention."
                 )
             else:
-                st.success(f"**Predicted Condition:** {prediction}")
-                st.write(f"**Confidence:** {confidence:.2f}%")
+                st.info(
+                    "🩺 **Recommendation**\n\n"
+                    "Consult a qualified doctor for confirmation."
+                )
 
-                if any(word in prediction.lower() for word in [
-                    "heart", "stroke", "attack", "pneumonia"
-                ]):
-                    st.error(
-                        "🚨 **High Risk Detected**\n\n"
-                        "Please seek immediate medical attention."
-                    )
-                else:
-                    st.info(
-                        "🩺 **Recommendation**\n\n"
-                        "Consult a qualified doctor for confirmation."
-                    )
-    else:
-        st.warning("⚠️ Please enter symptoms.")
+        else:
+            st.warning("⚠️ Please enter symptoms.")
 
     # ---------------- FOOTER ----------------
     st.divider()

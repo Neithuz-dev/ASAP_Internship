@@ -7,7 +7,6 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score
 
 data1=pd.read_csv('dataset\data.csv')
-data2=pd.read_csv('dataset\disease.csv')
 data= pd.concat([data1, data2], ignore_index=True)
 
 data = data[['symptom_text', 'diseases']].dropna()
