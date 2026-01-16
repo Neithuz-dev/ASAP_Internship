@@ -31,6 +31,16 @@ def search_online(query):
                 region='us-en',
                 max_results=3
             ))
+            
+            # Fallback if no results (often due to IP blocking on cloud)
+            if not results:
+                 print("Trying fallback backend='html'")
+                 results = list(ddgs.text(
+                    search_query,
+                    region='us-en',
+                    max_results=3,
+                    backend='html'
+                ))
         return results
     except Exception as e:
         st.error(f"Debug Error: {e}") # Show error in UI for debugging
