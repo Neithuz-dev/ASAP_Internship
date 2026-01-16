@@ -175,7 +175,10 @@ try:
                         st.caption(f"{res['body']}")
                         st.markdown("---")
                 else:
-                    st.write("No online results found.")
+                    st.warning("Could not fetch detailed results automatically.")
+                    # Provide a direct link to Google Search as a reliable fallback
+                    google_url = f"https://www.google.com/search?q={search_query.replace(' ', '+')}"
+                    st.markdown(f"**👉 [Click here to search on Google]({google_url})**")
         else:
             st.warning(" Please enter symptoms.")
 
