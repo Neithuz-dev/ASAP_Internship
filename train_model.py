@@ -30,7 +30,7 @@ x_train, x_test, y_train, y_test = train_test_split(
 )
 
 
-vectorizer = TfidfVectorizer(stop_words="english")
+vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2))
 x_train_vec = vectorizer.fit_transform(x_train)
 x_test_vec = vectorizer.transform(x_test)
 
@@ -49,7 +49,9 @@ NON_SYMPTOM_WORDS = {
     "always", "sometimes", "started", "felt", "years", "recently", "noticed", 
     "trouble", "frequently", "time", "constantly", "feels", "parts", "mainly", 
     "areas", "different", "certain", "particularly", "especially", "getting", 
-    "even", "every", "feelings", "known"
+    "even", "every", "feelings", "known", "include", "including", "abound",
+    "associated", "accompanied", "following", "followed", "bothering", "causing",
+    "cause", "caused", "come", "coming", "comes", "day", "night", "morning"
 }
 
 feature_names = vectorizer.get_feature_names_out()
@@ -64,12 +66,16 @@ important_words = sorted(
 
 common_symptoms = []
 for word, score in important_words:
+    # Filter out pure stopwords/numbers and ensure length
     if (
         len(word) > 3 and
-        word not in NON_SYMPTOM_WORDS
+        # Check if the word (or any part of the bigram) is in non_symptom_words
+        not any(w in NON_SYMPTOM_WORDS for w in word.split()) and
+        not word.replace(' ', '').isdigit()
     ):
         common_symptoms.append(word)
-    if len(common_symptoms) == 25:
+    # Increase limit to capture more specific phrases
+    if len(common_symptoms) >= 150:
         break
 
 with open("models/model.pkl", "wb") as f:
@@ -78,4 +84,5 @@ with open("models/model.pkl", "wb") as f:
 with open("models/symptoms.pkl", "wb") as f:
     pickle.dump(common_symptoms, f)
 
-print("Model and clean symptom list saved successfully")
+print(f"Model saved. {len(common_symptoms)} symptoms extracted.")
+print("Top 10 symptoms:", common_symptoms[:10])

@@ -112,15 +112,20 @@ try:
                     relevant_rows = df[mask]
                     
                     if not relevant_rows.empty:
-                        all_text = " ".join(relevant_rows['text'].tolist())
-                        all_words = clean_text(all_text).split()
-                        # Suggest words that are in our model's known symptom list
-                        # but NOT already in user input
-                        possible_symptoms = [
-                            w for w in all_words 
-                            if w in symptom_list and w not in input_words
-                        ]
-                        suggestions = [w for w, c in Counter(possible_symptoms).most_common(10)]
+
+                        all_text = " ".join(relevant_rows['text'].tolist()).lower()
+                        
+                        # Count occurrences of each known symptom phrase in the filtered text
+                        symptom_counts = Counter()
+                        for symptom in symptom_list:
+                             # Check if symptom is not already in user input
+                            if symptom not in cleaned:
+                                count = all_text.count(symptom)
+                                if count > 0:
+                                    symptom_counts[symptom] = count
+                        
+                        # Get top 8 most frequent symptoms from context
+                        suggestions = [s for s, c in symptom_counts.most_common(8)]
                 
                 # Fallback if no relevant context found
                 if not suggestions:
@@ -151,8 +156,8 @@ try:
                 results = search_online(cleaned)
                 if results:
                     for res in results:
-                        # Display Title and Body as text only, no links
-                        st.markdown(f"**{res['title']}**")
+                        # Display Title with clickable link and Body
+                        st.markdown(f"**[{res['title']}]({res['href']})**")
                         st.caption(f"{res['body']}")
                         st.markdown("---")
                 else:
