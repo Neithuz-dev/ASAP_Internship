@@ -1,7 +1,10 @@
 import streamlit as st
 import pickle
 import re
-from ddgs import DDGS
+try:
+    from duckduckgo_search import DDGS
+except ImportError:
+    from ddgs import DDGS
 import pandas as pd
 from collections import Counter
 
