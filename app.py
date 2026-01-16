@@ -33,7 +33,8 @@ def search_online(query):
             ))
         return results
     except Exception as e:
-        print(f"Search Error: {e}") # Log error to console/terminal
+        st.error(f"Debug Error: {e}") # Show error in UI for debugging
+        print(f"Search Error: {e}")
         return []
 
 @st.cache_resource
