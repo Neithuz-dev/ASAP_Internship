@@ -25,7 +25,7 @@ def search_online(query):
         with DDGS() as ddgs:
             # region='us-en' enforces English results
             # specific query structure to find conditions
-            search_query = f"{query} medical condition diagnosis"
+            search_query = f"medical condition with symptoms {query}"
             results = list(ddgs.text(
                 search_query,
                 region='us-en',
