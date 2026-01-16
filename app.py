@@ -1,6 +1,9 @@
 import streamlit as st
 import pickle
 import re
+from ddgs import DDGS
+import pandas as pd
+from collections import Counter
 
 st.set_page_config(
     page_title="DiagnosAI – Smart Health Diagnosis",
@@ -14,15 +17,41 @@ def clean_text(text):
     text = re.sub(r'\d+', '', text)
     return text.strip()
 
+def search_online(query):
+    try:
+        with DDGS() as ddgs:
+            # region='us-en' enforces English results
+            # specific query structure to find conditions
+            search_query = f"{query} medical condition diagnosis"
+            results = list(ddgs.text(
+                search_query,
+                region='us-en',
+                max_results=3
+            ))
+        return results
+    except Exception as e:
+        print(f"Search Error: {e}") # Log error to console/terminal
+        return []
+
+@st.cache_resource
+def load_data():
+    try:
+        df = pd.read_csv("dataset/Symptom2Disease.csv")
+        return df
+    except Exception:
+        return pd.DataFrame() # Return empty if file missing
+
 @st.cache_resource
 def load_assets():
     with open("models/model.pkl", "rb") as f:
         model, vectorizer = pickle.load(f)
     return model, vectorizer
 
-# Load symptom list at module level
+# Load data
 with open("models/symptoms.pkl", "rb") as f:
     symptom_list = pickle.load(f)
+
+df = load_data()
 
 try:
     model, vectorizer = load_assets()
@@ -74,30 +103,64 @@ try:
 
             if len(cleaned.split()) < 4:
                 st.warning("Please add more symptoms for better accuracy.")
-                st.write("**Common related symptoms you may have:**")
+                
+                # Context-aware suggestions
+                suggestions = []
+                if not df.empty:
+                    # Find rows containing ANY of the input words
+                    mask = df['text'].str.contains(cleaned, case=False, na=False)
+                    relevant_rows = df[mask]
+                    
+                    if not relevant_rows.empty:
+                        all_text = " ".join(relevant_rows['text'].tolist())
+                        all_words = clean_text(all_text).split()
+                        # Suggest words that are in our model's known symptom list
+                        # but NOT already in user input
+                        possible_symptoms = [
+                            w for w in all_words 
+                            if w in symptom_list and w not in input_words
+                        ]
+                        suggestions = [w for w, c in Counter(possible_symptoms).most_common(10)]
+                
+                # Fallback if no relevant context found
+                if not suggestions:
+                     suggestions = [s for s in symptom_list if s not in input_words][:6]
+
+                st.markdown("**Common related symptoms you may have:**")
+                # Display as chips/tags
                 st.write(", ".join(suggestions))
 
-            if any(word in prediction.lower() for word in [
-                    "heart", "stroke", "attack", "pneumonia"
-                ]):
-                    st.error(
-                        "**High Risk Detected**\n\n"
-                        "Please seek immediate medical attention."
-                    )
+            # 1. Always show Prediction Report
+            st.divider()
+            st.markdown("##  Diagnosis Report")
+            st.success(f"**Predicted Condition:** {prediction}")
+            st.write(f"**Confidence:** {confidence:.2f}%")
+
+            # 2. Risk Assessment
+            if any(word in prediction.lower() for word in ["heart", "stroke", "attack", "pneumonia"]):
+                st.error("**High Risk Detected**\n\nPlease seek immediate medical attention.")
             else:
-                    st.info(
-                        " **Recommendation**\n\n"
-                        "Consult a qualified doctor for confirmation."
-                    )
+                st.info("**Recommendation**\n\nConsult a qualified doctor for confirmation.")
+
+            # 3. Dynamic Web Insights (Low Confidence)
+            if confidence < 60:
+                st.divider()
+                st.markdown("### 🌐 Additional Internet Insights (Low Confidence)")
+                st.warning(f"⚠️ Service is uncertain ({confidence:.2f}%). Below are related findings from the web:")
+                
+                results = search_online(cleaned)
+                if results:
+                    for res in results:
+                        # Display Title and Body as text only, no links
+                        st.markdown(f"**{res['title']}**")
+                        st.caption(f"{res['body']}")
+                        st.markdown("---")
+                else:
+                    st.write("No online results found.")
         else:
             st.warning(" Please enter symptoms.")
 
-    if prediction is not None and confidence is not None:
-        st.divider()
-        st.markdown("##  Diagnosis Report")
 
-        st.success(f"**Predicted Condition:** {prediction}")
-        st.write(f"**Confidence:** {confidence:.2f}%")
 
     st.divider()
     st.caption(" DiagnosAI | Built with Streamlit & Machine Learning")
