@@ -11,6 +11,10 @@ try:
     from googlesearch import search
 except ImportError:
     print("googlesearch not found")
+try:
+    import wikipedia
+except ImportError:
+    print("wikipedia module not found")
 
 
 st.set_page_config(
@@ -62,6 +66,22 @@ def search_online(query):
                         "href": res.url,
                         "body": res.description
                     })
+
+            # Final Fallback: Wikipedia
+            if not results:
+                  print("Trying fallback: Wikipedia")
+                  try:
+                      # Search for the condition page
+                      wiki_search = wikipedia.search(query, results=1)
+                      if wiki_search:
+                          page = wikipedia.page(wiki_search[0])
+                          results.append({
+                              "title": f"{page.title} - Wikipedia",
+                              "href": page.url,
+                              "body": page.summary[:300] + "..."
+                          })
+                  except Exception as w_e:
+                      print(f"Wikipedia Error: {w_e}")
 
         return results
     except Exception as e:

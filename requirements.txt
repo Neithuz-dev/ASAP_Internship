@@ -4,3 +4,4 @@ numpy
 scikit-learn
 duckduckgo-search
 googlesearch-python
+wikipedia
