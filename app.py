@@ -30,7 +30,9 @@ def search_online(query):
         with DDGS() as ddgs:
             # region='us-en' enforces English results
             # specific query structure to find conditions
-            search_query = f"medical condition with symptoms {query}"
+            # Search from trusted medical sources only
+            trusted_sites = "site:mayoclinic.org OR site:webmd.com OR site:cdc.gov OR site:healthline.com OR site:nhs.uk OR site:clevelandclinic.org"
+            search_query = f"{query} symptoms {trusted_sites}"
             results = list(ddgs.text(
                 search_query,
                 region='us-en',
