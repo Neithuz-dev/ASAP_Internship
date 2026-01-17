@@ -12,9 +12,12 @@
 *   **Smart Suggestions**: The app suggests relevant symptoms (including multi-word phrases like "joint pain") based on the input context to improve prediction accuracy.
 *   **Confidence Score**: Displays the model's confidence in the prediction.
 *   **Risk Assessment**: Automatically flags high-risk conditions (e.g., Heart Attack, Pneumonia) and advises immediate medical attention.
-*   **Internet Insights**:
-    *   Fetches real-time related articles from the web using DuckDuckGo.
-    *   **Fallback Mechanism**: Provides a direct Google Search link if automated retrieval fails.
+*   **Internet Insights (Multi-Fallback System)**:
+    *   **Primary**: Fetches real-time articles using **DuckDuckGo**.
+    *   **Secondary**: Falls back to **Google Search** (via `googlesearch-python`) if DuckDuckGo fails.
+    *   **Tertiary**: Queries **Wikipedia** for condition summaries if search engines are blocked.
+    *   **Reliability**: Always provides a direct **"Click here to search on Google"** link as a fail-safe.
+    *   **Trusted Sources**: Search queries are optimized to prioritize reputable medical sites (Mayo Clinic, WebMD, CDC, NHS, etc.).
 *   **Responsive UI**: Built with Streamlit for a clean and interactive user experience.
 
 ## 🛠️ Tech Stack
@@ -23,7 +26,7 @@
 *   **Framework**: [Streamlit](https://streamlit.io/)
 *   **Machine Learning**: Scikit-Learn (Multinomial Naive Bayes, TF-IDF Vectorizer)
 *   **Data Processing**: Pandas, NumPy
-*   **Search Integration**: `duckduckgo-search` library
+*   **Search Integration**: `duckduckgo-search`, `googlesearch-python`, `wikipedia`
 
 ## 📂 Project Structure
 
