@@ -65,7 +65,7 @@ def search_online(query):
 
         return results
     except Exception as e:
-        st.error(f"Debug Error: {e}") # Show error in UI for debugging
+        # st.error(f"Debug Error: {e}") # specific error hiding
         print(f"Search Error: {e}")
         return []
 
