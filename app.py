@@ -7,6 +7,11 @@ except ImportError:
     from ddgs import DDGS
 import pandas as pd
 from collections import Counter
+try:
+    from googlesearch import search
+except ImportError:
+    print("googlesearch not found")
+
 
 st.set_page_config(
     page_title="DiagnosAI – Smart Health Diagnosis",
@@ -35,12 +40,27 @@ def search_online(query):
             # Fallback if no results (often due to IP blocking on cloud)
             if not results:
                  print("Trying fallback backend='html'")
-                 results = list(ddgs.text(
-                    search_query,
-                    region='us-en',
-                    max_results=3,
-                    backend='html'
-                ))
+                 try:
+                    results = list(ddgs.text(
+                        search_query,
+                        region='us-en',
+                        max_results=3,
+                        backend='html'
+                    ))
+                 except Exception:
+                     pass # Proceed to next fallback
+            
+            # Final Fallback: Google Search (googlesearch-python)
+            if not results:
+                print("Trying fallback: Google Search")
+                google_results = search(search_query, num_results=3, advanced=True)
+                for res in google_results:
+                    results.append({
+                        "title": res.title,
+                        "href": res.url,
+                        "body": res.description
+                    })
+
         return results
     except Exception as e:
         st.error(f"Debug Error: {e}") # Show error in UI for debugging
@@ -175,6 +195,7 @@ try:
                         st.caption(f"{res['body']}")
                         st.markdown("---")
                 else:
+                    st.warning("Could not fetch detailed results automatically.")
                     # Provide a direct link to Google Search as a reliable fallback
                     google_url = f"https://www.google.com/search?q=medical+condition+with+symptoms+{cleaned.replace(' ', '+')}"
                     st.markdown(f"**👉 [Click here to search on Google]({google_url})**")
