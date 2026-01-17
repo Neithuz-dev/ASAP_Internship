@@ -216,11 +216,10 @@ try:
                         st.markdown(f"**[{res['title']}]({res['href']})**")
                         st.caption(f"{res['body']}")
                         st.markdown("---")
-                else:
-                    st.warning("Could not fetch detailed results automatically.")
-                    # Provide a direct link to Google Search as a reliable fallback
-                    google_url = f"https://www.google.com/search?q=medical+condition+with+symptoms+{cleaned.replace(' ', '+')}"
-                    st.markdown(f"**👉 [Click here to search on Google]({google_url})**")
+                
+                # Always provide a direct link to Google Search as a reliable fallback
+                google_url = f"https://www.google.com/search?q=medical+condition+with+symptoms+{cleaned.replace(' ', '+')}"
+                st.markdown(f"**👉 [Click here to search on Google]({google_url})**")
         else:
             st.warning(" Please enter symptoms.")
 
