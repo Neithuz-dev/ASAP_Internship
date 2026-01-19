@@ -29,63 +29,76 @@ def clean_text(text):
     text = re.sub(r'\d+', '', text)
     return text.strip()
 
-def search_online(query):
+def search_online(symptoms_text, disease_name=None):
+    results = []
+
     try:
         with DDGS() as ddgs:
-            # region='us-en' enforces English results
-            # specific query structure to find conditions
-            # Search from trusted medical sources only
-            trusted_sites = "site:mayoclinic.org OR site:webmd.com OR site:cdc.gov OR site:healthline.com OR site:nhs.uk OR site:clevelandclinic.org"
-            search_query = f"{query} symptoms {trusted_sites}"
+            trusted_sites = (
+                "site:mayoclinic.org OR site:webmd.com OR site:cdc.gov "
+                "OR site:healthline.com OR site:nhs.uk OR site:clevelandclinic.org"
+            )
+
+            search_query = f"{symptoms_text} symptoms {trusted_sites}"
+
             results = list(ddgs.text(
                 search_query,
-                region='us-en',
+                region="us-en",
                 max_results=3
             ))
-            
-            # Fallback if no results (often due to IP blocking on cloud)
+
             if not results:
-                 print("Trying fallback backend='html'")
-                 try:
+                try:
                     results = list(ddgs.text(
                         search_query,
-                        region='us-en',
+                        region="us-en",
                         max_results=3,
-                        backend='html'
+                        backend="html"
                     ))
-                 except Exception:
-                     pass # Proceed to next fallback
-            
-            # Final Fallback: Google Search (googlesearch-python)
-            if not results:
-                print("Trying fallback: Google Search")
-                google_results = search(search_query, num_results=3, advanced=True)
-                for res in google_results:
-                    results.append({
-                        "title": res.title,
-                        "href": res.url,
-                        "body": res.description
-                    })
+                except Exception:
+                    pass
 
-            # Final Fallback: Wikipedia
             if not results:
-                  print("Trying fallback: Wikipedia")
-                  try:
-                      # Search for the condition page
-                      wiki_search = wikipedia.search(query, results=1)
-                      if wiki_search:
-                          page = wikipedia.page(wiki_search[0])
-                          results.append({
-                              "title": f"{page.title} - Wikipedia",
-                              "href": page.url,
-                              "body": page.summary[:300] + "..."
-                          })
-                  except Exception as w_e:
-                      print(f"Wikipedia Error: {w_e}")
+                try:
+                    google_results = search(search_query, num_results=3, advanced=True)
+                    for res in google_results:
+                        results.append({
+                            "title": res.title,
+                            "href": res.url,
+                            "body": res.description
+                        })
+                except Exception:
+                    pass
+
+            if not results and disease_name:
+                try:
+                    wiki_search = wikipedia.search(disease_name, results=3)
+
+                    for title in wiki_search:
+                        try:
+                            page = wikipedia.page(title, auto_suggest=False)
+
+                            # Medical relevance filter
+                            if any(word in page.summary.lower()
+                                   for word in ["disease", "condition", "symptom", "medical"]):
+                                results.append({
+                                    "title": f"{page.title} - Wikipedia",
+                                    "href": page.url,
+                                    "body": page.summary[:300] + "..."
+                                })
+                                break
+
+                        except wikipedia.DisambiguationError:
+                            continue
+                        except wikipedia.PageError:
+                            continue
+
+                except Exception as w_e:
+                    print(f"Wikipedia Error: {w_e}")
 
         return results
+
     except Exception as e:
-        # st.error(f"Debug Error: {e}") # specific error hiding
         print(f"Search Error: {e}")
         return []
 
@@ -95,7 +108,7 @@ def load_data():
         df = pd.read_csv("dataset/Symptom2Disease.csv")
         return df
     except Exception:
-        return pd.DataFrame() # Return empty if file missing
+        return pd.DataFrame()
 
 @st.cache_resource
 def load_assets():
@@ -160,10 +173,8 @@ try:
             if len(cleaned.split()) < 4:
                 st.warning("Please add more symptoms for better accuracy.")
                 
-                # Context-aware suggestions
                 suggestions = []
                 if not df.empty:
-                    # Find rows containing ANY of the input words
                     mask = df['text'].str.contains(cleaned, case=False, na=False)
                     relevant_rows = df[mask]
                     
@@ -171,33 +182,26 @@ try:
 
                         all_text = " ".join(relevant_rows['text'].tolist()).lower()
                         
-                        # Count occurrences of each known symptom phrase in the filtered text
                         symptom_counts = Counter()
                         for symptom in symptom_list:
-                             # Check if symptom is not already in user input
                             if symptom not in cleaned:
                                 count = all_text.count(symptom)
                                 if count > 0:
                                     symptom_counts[symptom] = count
                         
-                        # Get top 8 most frequent symptoms from context
                         suggestions = [s for s, c in symptom_counts.most_common(8)]
                 
-                # Fallback if no relevant context found
                 if not suggestions:
                      suggestions = [s for s in symptom_list if s not in input_words][:6]
 
                 st.markdown("**Common related symptoms you may have:**")
-                # Display as chips/tags
                 st.write(", ".join(suggestions))
 
-            # 1. Always show Prediction Report
             st.divider()
             st.markdown("##  Diagnosis Report")
             st.success(f"**Predicted Condition:** {prediction}")
             st.write(f"**Confidence:** {confidence:.2f}%")
 
-            # 2. Risk Assessment
             if any(word in prediction.lower() for word in ["heart", "stroke", "attack", "pneumonia"]):
                 st.error("**High Risk Detected**\n\nPlease seek immediate medical attention.")
             else:
@@ -209,15 +213,13 @@ try:
                 st.markdown("### 🌐 Additional Internet Insights (Low Confidence)")
                 st.warning(f"⚠️ Service is uncertain ({confidence:.2f}%). Below are related findings from the web:")
                 
-                results = search_online(cleaned)
+                results = search_online(cleaned,prediction)
                 if results:
                     for res in results:
-                        # Display Title with clickable link and Body
                         st.markdown(f"**[{res['title']}]({res['href']})**")
                         st.caption(f"{res['body']}")
                         st.markdown("---")
                 
-                # Always provide a direct link to Google Search as a reliable fallback
                 google_url = f"https://www.google.com/search?q=medical+condition+with+symptoms+{cleaned.replace(' ', '+')}"
                 st.markdown(f"**👉 [Click here to search on Google]({google_url})**")
         else:
