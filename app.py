@@ -11,11 +11,6 @@ try:
     from googlesearch import search
 except ImportError:
     print("googlesearch not found")
-try:
-    import wikipedia
-except ImportError:
-    print("wikipedia module not found")
-
 
 st.set_page_config(
     page_title="DiagnosAI – Smart Health Diagnosis",
@@ -28,6 +23,14 @@ def clean_text(text):
     text = re.sub(r'\s+', ' ', text)
     text = re.sub(r'\d+', '', text)
     return text.strip()
+
+def fast_wikipedia_link(disease_name):
+    title = disease_name.strip().replace(" ", "_")
+    return {
+        "title": f"{disease_name} - Wikipedia",
+        "href": f"https://en.wikipedia.org/wiki/{title}",
+        "body": "Click to view detailed medical information on Wikipedia."
+    }
 
 def search_online(symptoms_text, disease_name=None):
     results = []
@@ -71,32 +74,7 @@ def search_online(symptoms_text, disease_name=None):
                     pass
 
             if not results and disease_name:
-                try:
-                    wiki_search = wikipedia.search(disease_name, results=3)
-
-                    for title in wiki_search:
-                        try:
-                            page = wikipedia.page(title, auto_suggest=False)
-
-                            # Medical relevance filter
-                            if any(word in page.summary.lower()
-                                   for word in ["disease", "condition", "symptom", "medical"]):
-                                results.append({
-                                    "title": f"{page.title} - Wikipedia",
-                                    "href": page.url,
-                                    "body": page.summary[:300] + "..."
-                                })
-                                break
-
-                        except wikipedia.DisambiguationError:
-                            continue
-                        except wikipedia.PageError:
-                            continue
-
-                except Exception as w_e:
-                    print(f"Wikipedia Error: {w_e}")
-
-        return results
+                results.append(fast_wikipedia_link(disease_name))
 
     except Exception as e:
         print(f"Search Error: {e}")
@@ -207,7 +185,6 @@ try:
             else:
                 st.info("**Recommendation**\n\nConsult a qualified doctor for confirmation.")
 
-            # 3. Dynamic Web Insights (Low Confidence)
             if confidence < 60:
                 st.divider()
                 st.markdown("### 🌐 Additional Internet Insights (Low Confidence)")
