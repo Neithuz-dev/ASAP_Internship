@@ -75,6 +75,7 @@ def search_online(symptoms_text, disease_name=None):
 
             if not results and disease_name:
                 results.append(fast_wikipedia_link(disease_name))
+                return results
 
     except Exception as e:
         print(f"Search Error: {e}")
