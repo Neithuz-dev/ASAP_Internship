@@ -206,7 +206,7 @@ try:
 
 
     st.divider()
-    st.caption(" DiagnosAI | Built with Streamlit & Machine Learning")
+    st.caption(" DiagnoseAI | Built with Streamlit & Machine Learning")
 
 except Exception as e:
     st.error(f"An error occurred: {str(e)}")
