@@ -1,4 +1,4 @@
-# 🩺 DiagnosAI – Smart Health Diagnosis
+# 🩺 DiagnoseAI – Smart Health Diagnosis
 
 **DiagnosAI** is an AI-powered web application designed to predict potential medical conditions based on user-described symptoms. It utilizes machine learning (Naive Bayes) to analyze symptoms and provides instant predictions, confidence scores, and relevant internet insights.
 
