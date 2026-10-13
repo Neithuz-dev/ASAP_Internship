@@ -13,7 +13,7 @@ except ImportError:
     print("googlesearch not found")
 
 st.set_page_config(
-    page_title="DiagnosAI – Smart Health Diagnosis",
+    page_title="DiagnoseAI – Smart Health Diagnosis",
     layout="centered"
 )
 
@@ -105,7 +105,7 @@ try:
     model, vectorizer = load_assets()
 
     with st.sidebar:
-        st.markdown("🩺DiagnosAI")
+        st.markdown("🩺DiagnoseAI")
         st.caption("AI-Powered Disease Prediction")
         st.divider()
         st.markdown(" How it works")
